@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useWebSocket } from '@/lib/useWebSocket';
-import { fetchTopology, fetchTrains, runOptimization, fetchSafetyVerification } from '@/lib/api';
+import { fetchTopology, fetchTrains, runOptimization } from '@/lib/api';
 import { RouteTopology, Train, TrainStationSchedule, AdvisoryCard } from '@/lib/types';
 
 import { HeaderBar } from '@/components/HeaderBar';
@@ -53,12 +53,12 @@ export default function Home() {
   }, [wsData]);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans pb-6">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       {/* 1. Top Government Header Bar */}
       <HeaderBar sectionName="Section: Prayagraj - Kanpur Central | Up/Down Trunk Line" />
 
       {/* Main Content Area */}
-      <main className="flex-1 px-6 py-5 max-w-[1800px] w-full mx-auto space-y-5">
+      <main className="flex-1 px-6 py-6 max-w-[1800px] w-full mx-auto flex flex-col gap-6">
         {/* 2. Top KPI Metric Ribbon */}
         <KPIRibbon
           throughputPercent={118.4}
@@ -68,9 +68,9 @@ export default function Home() {
         />
 
         {/* 3. Main Working Area (2-Column Grid: 70% Left, 30% Right) */}
-        <div className="grid grid-cols-1 lg:grid-cols-10 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-10 gap-6 items-start">
           {/* 70% Left Column */}
-          <div className="lg:col-span-7 space-y-5">
+          <div className="lg:col-span-7 flex flex-col gap-6">
             {/* Time-Distance Marey Diagram Chart */}
             <TimeDistanceChart
               topology={topology}
@@ -95,7 +95,7 @@ export default function Home() {
           </div>
 
           {/* 30% Right Column */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 flex flex-col gap-6">
             <AdvisoryPanel
               advisories={advisories}
               onAdvisoryApplied={refreshAllData}
@@ -104,11 +104,13 @@ export default function Home() {
         </div>
 
         {/* 4. Bottom Operational Sandbox Toolbar */}
-        <WhatIfSandbox
-          topology={topology}
-          trains={trains}
-          onSandboxUpdate={refreshAllData}
-        />
+        <div className="w-full pt-2">
+          <WhatIfSandbox
+            topology={topology}
+            trains={trains}
+            onSandboxUpdate={refreshAllData}
+          />
+        </div>
       </main>
     </div>
   );

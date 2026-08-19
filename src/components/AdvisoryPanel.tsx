@@ -34,7 +34,7 @@ export function AdvisoryPanel({ advisories, onAdvisoryApplied }: AdvisoryPanelPr
   };
 
   return (
-    <div className="gov-card p-5 flex flex-col h-full">
+    <div className="gov-card p-5 flex flex-col w-full">
       {/* Panel Header */}
       <div className="border-b border-slate-200 pb-3 mb-4">
         <div className="flex items-center space-x-2">

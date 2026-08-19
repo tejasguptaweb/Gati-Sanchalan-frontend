@@ -206,7 +206,7 @@ export function TimeDistanceChart({
   }, [topology, trains, schedules, selectedTrainId]);
 
   return (
-    <div ref={containerRef} className="gov-card p-5 relative flex flex-col h-full">
+    <div ref={containerRef} className="gov-card p-5 relative flex flex-col w-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 border-b border-slate-200 pb-3">
         <div>
           <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
