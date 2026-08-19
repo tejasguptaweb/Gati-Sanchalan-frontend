@@ -12,6 +12,37 @@ interface TimeDistanceChartProps {
   onSelectTrain?: (trainId: string) => void;
 }
 
+// Fallback Station Topology
+const DEFAULT_STATIONS = [
+  { id: 'STN_PRYJ', name: 'Prayagraj Jn', code: 'PRYJ', km_mark: 0 },
+  { id: 'STN_SFG', name: 'Subedarganj', code: 'SFG', km_mark: 10 },
+  { id: 'STN_SRO', name: 'Sirathu', code: 'SRO', km_mark: 45 },
+  { id: 'STN_FTP', name: 'Fatehpur', code: 'FTP', km_mark: 75 },
+  { id: 'STN_CNB', name: 'Kanpur Central', code: 'CNB', km_mark: 120 },
+];
+
+// Fallback Train Schedules
+const DEFAULT_SCHEDULES: TrainStationSchedule[] = [
+  // Vande Bharat #201 (Blue Line) - Fast Down
+  { train_id: 'TRN_201', train_number: '201', station_id: 'STN_PRYJ', station_code: 'PRYJ', scheduled_arrival_min: 0, scheduled_departure_min: 2, optimized_arrival_min: 2, optimized_departure_min: 4, assigned_track: 'Main Line', dwell_time_min: 2, is_holding: false },
+  { train_id: 'TRN_201', train_number: '201', station_id: 'STN_SFG', station_code: 'SFG', scheduled_arrival_min: 8, scheduled_departure_min: 10, optimized_arrival_min: 9, optimized_departure_min: 11, assigned_track: 'Main Line (Pass)', dwell_time_min: 2, is_holding: false },
+  { train_id: 'TRN_201', train_number: '201', station_id: 'STN_SRO', station_code: 'SRO', scheduled_arrival_min: 28, scheduled_departure_min: 30, optimized_arrival_min: 27, optimized_departure_min: 29, assigned_track: 'Main Line', dwell_time_min: 2, is_holding: false },
+  { train_id: 'TRN_201', train_number: '201', station_id: 'STN_FTP', station_code: 'FTP', scheduled_arrival_min: 46, scheduled_departure_min: 48, optimized_arrival_min: 45, optimized_departure_min: 47, assigned_track: 'Main Line', dwell_time_min: 2, is_holding: false },
+  { train_id: 'TRN_201', train_number: '201', station_id: 'STN_CNB', station_code: 'CNB', scheduled_arrival_min: 70, scheduled_departure_min: 72, optimized_arrival_min: 68, optimized_departure_min: 70, assigned_track: 'Main Line', dwell_time_min: 2, is_holding: false },
+
+  // Freight #401 (Crimson Line) - Holds at Subedarganj Loop 1 for Overtake
+  { train_id: 'TRN_401', train_number: '401', station_id: 'STN_PRYJ', station_code: 'PRYJ', scheduled_arrival_min: 0, scheduled_departure_min: 2, optimized_arrival_min: 0, optimized_departure_min: 2, assigned_track: 'Main Line', dwell_time_min: 2, is_holding: false },
+  { train_id: 'TRN_401', train_number: '401', station_id: 'STN_SFG', station_code: 'SFG', scheduled_arrival_min: 7, scheduled_departure_min: 9, optimized_arrival_min: 8, optimized_departure_min: 22, assigned_track: 'Loop Siding 1', dwell_time_min: 14, is_holding: true, holding_reason: 'Diverted to Loop Siding 1 for Vande Bharat #201 overtake' },
+  { train_id: 'TRN_401', train_number: '401', station_id: 'STN_SRO', station_code: 'SRO', scheduled_arrival_min: 42, scheduled_departure_min: 44, optimized_arrival_min: 50, optimized_departure_min: 52, assigned_track: 'Main Line', dwell_time_min: 2, is_holding: false },
+  { train_id: 'TRN_401', train_number: '401', station_id: 'STN_FTP', station_code: 'FTP', scheduled_arrival_min: 68, scheduled_departure_min: 70, optimized_arrival_min: 74, optimized_departure_min: 76, assigned_track: 'Main Line', dwell_time_min: 2, is_holding: false },
+
+  // Passenger #302 (Amber Line)
+  { train_id: 'TRN_302', train_number: '302', station_id: 'STN_PRYJ', station_code: 'PRYJ', scheduled_arrival_min: 15, scheduled_departure_min: 17, optimized_arrival_min: 16, optimized_departure_min: 18, assigned_track: 'Main Line', dwell_time_min: 2, is_holding: false },
+  { train_id: 'TRN_302', train_number: '302', station_id: 'STN_SFG', station_code: 'SFG', scheduled_arrival_min: 24, scheduled_departure_min: 26, optimized_arrival_min: 25, optimized_departure_min: 27, assigned_track: 'Main Line', dwell_time_min: 2, is_holding: false },
+  { train_id: 'TRN_302', train_number: '302', station_id: 'STN_SRO', station_code: 'SRO', scheduled_arrival_min: 52, scheduled_departure_min: 54, optimized_arrival_min: 53, optimized_departure_min: 55, assigned_track: 'Main Line', dwell_time_min: 2, is_holding: false },
+  { train_id: 'TRN_302', train_number: '302', station_id: 'STN_FTP', station_code: 'FTP', scheduled_arrival_min: 78, scheduled_departure_min: 80, optimized_arrival_min: 77, optimized_departure_min: 79, assigned_track: 'Main Line', dwell_time_min: 2, is_holding: false },
+];
+
 export function TimeDistanceChart({
   topology,
   trains,
@@ -23,47 +54,57 @@ export function TimeDistanceChart({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [tooltip, setTooltip] = useState<{ x: number; y: number; content: React.ReactNode } | null>(null);
 
+  const stationsData = (topology && topology.stations && topology.stations.length > 0)
+    ? topology.stations
+    : DEFAULT_STATIONS;
+
+  const activeSchedules = (schedules && schedules.length > 0)
+    ? schedules
+    : DEFAULT_SCHEDULES;
+
   useEffect(() => {
-    if (!svgRef.current || !containerRef.current || !topology) return;
+    if (!svgRef.current || !containerRef.current) return;
 
     const svg = d3.select(svgRef.current);
     svg.selectAll('*').remove();
 
-    const width = containerRef.current.clientWidth || 900;
-    const height = 460;
-    const margin = { top: 40, right: 30, bottom: 50, left: 140 };
+    const clientW = containerRef.current.clientWidth;
+    const width = Math.max(clientW || 850, 750);
+    const height = 480;
+    const margin = { top: 40, right: 40, bottom: 50, left: 160 };
 
     const innerWidth = width - margin.left - margin.right;
     const innerHeight = height - margin.top - margin.bottom;
 
     const g = svg
-      .attr('width', width)
+      .attr('width', '100%')
       .attr('height', height)
+      .attr('viewBox', `0 0 ${width} ${height}`)
       .append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // X Scale: Time in 15-minute intervals (10:00 to 11:15, mapping 0 to 75 min)
-    const xScale = d3.scaleLinear().domain([0, 75]).range([0, innerWidth]);
+    // X Scale: 0 to 90 minutes (10:00 to 11:30)
+    const xScale = d3.scaleLinear().domain([0, 90]).range([0, innerWidth]);
 
-    // Y Scale: Distance along Prayagraj - Kanpur section (0 to 120 km)
+    // Y Scale: 0 to 120 KM (Prayagraj to Kanpur)
     const yScale = d3.scaleLinear().domain([0, 120]).range([0, innerHeight]);
 
     // Background Grid
-    const xGrid = d3.axisBottom(xScale).ticks(5).tickSize(innerHeight).tickFormat(() => '');
-    const yGrid = d3.axisLeft(yScale).tickValues(topology.stations.map((s) => s.km_mark)).tickSize(-innerWidth).tickFormat(() => '');
+    const xGrid = d3.axisBottom(xScale).ticks(6).tickSize(innerHeight).tickFormat(() => '');
+    const yGrid = d3.axisLeft(yScale).tickValues(stationsData.map((s) => s.km_mark)).tickSize(-innerWidth).tickFormat(() => '');
 
-    g.append('g').attr('class', 'grid stroke-slate-200 stroke-dashed').call(xGrid);
-    g.append('g').attr('class', 'grid stroke-slate-200 stroke-dashed').call(yGrid);
+    g.append('g').attr('class', 'grid stroke-slate-200 stroke-dashed opacity-70').call(xGrid);
+    g.append('g').attr('class', 'grid stroke-slate-200 stroke-dashed opacity-70').call(yGrid);
 
-    // Time ticks: 10:00, 10:15, 10:30, 10:45, 11:00, 11:15
-    const timeLabels = ['10:00', '10:15', '10:30', '10:45', '11:00', '11:15'];
+    // Axes
+    const timeLabels = ['10:00', '10:15', '10:30', '10:45', '11:00', '11:15', '11:30'];
     const xAxis = d3
       .axisBottom(xScale)
-      .tickValues([0, 15, 30, 45, 60, 75])
+      .tickValues([0, 15, 30, 45, 60, 75, 90])
       .tickFormat((d, i) => timeLabels[i] || `T+${d}`);
 
-    const yAxis = d3.axisLeft(yScale).tickValues(topology.stations.map((s) => s.km_mark)).tickFormat((d) => {
-      const stn = topology.stations.find((s) => s.km_mark === d);
+    const yAxis = d3.axisLeft(yScale).tickValues(stationsData.map((s) => s.km_mark)).tickFormat((d) => {
+      const stn = stationsData.find((s) => s.km_mark === d);
       return stn ? `${stn.code} (${stn.name}) km ${d}` : `km ${d}`;
     });
 
@@ -76,7 +117,7 @@ export function TimeDistanceChart({
     yAxisG.select('.domain').attr('stroke', '#94A3B8');
 
     // Station Line Bands
-    topology.stations.forEach((stn) => {
+    stationsData.forEach((stn) => {
       const yPos = yScale(stn.km_mark);
       g.append('line')
         .attr('x1', 0)
@@ -87,52 +128,53 @@ export function TimeDistanceChart({
         .attr('stroke-width', 1.5);
     });
 
-    // Specific Color Palette for Trajectories:
-    // - Blue (#0F2C59 / #1D4ED8) for Vande Bharat Express 201
-    // - Crimson (#B71C1C) for Freight 401 holding at STA B loop siding
-    // - Amber (#B76E00) for Passenger 302
-    const getTrajectoryColor = (train: Train) => {
-      if (train.number === '201' || train.category === 'VANDE_BHARAT') return '#1D4ED8'; // Blue
-      if (train.number === '401' || train.category === 'FREIGHT') return '#B71C1C'; // Crimson
-      return '#B76E00'; // Amber
+    // Color logic
+    const getTrajectoryColor = (trnId: string, number: string) => {
+      if (number === '201' || trnId.includes('201')) return '#1D4ED8'; // Blue for Vande Bharat 201
+      if (number === '401' || trnId.includes('401')) return '#B71C1C'; // Crimson for Freight 401
+      return '#B76E00'; // Amber for Passenger 302
     };
 
-    // Group Schedules by Train
-    const trainSchedulesMap: { [trainId: string]: TrainStationSchedule[] } = {};
-    schedules.forEach((sch) => {
-      if (!trainSchedulesMap[sch.train_id]) trainSchedulesMap[sch.train_id] = [];
-      trainSchedulesMap[sch.train_id].push(sch);
+    // Group active schedules by train
+    const groupedMap: { [trnId: string]: TrainStationSchedule[] } = {};
+    activeSchedules.forEach((sch) => {
+      if (!groupedMap[sch.train_id]) groupedMap[sch.train_id] = [];
+      groupedMap[sch.train_id].push(sch);
     });
 
-    // Draw Paths for Trains
-    trains.forEach((train) => {
-      const trnSchedules = trainSchedulesMap[train.train_id] || [];
-      const color = getTrajectoryColor(train);
-      const isSelected = selectedTrainId === train.train_id;
+    // Draw string chart paths
+    Object.entries(groupedMap).forEach(([trnId, trnSchedules]) => {
+      const firstSch = trnSchedules[0];
+      const trnNumber = firstSch?.train_number || trnId.replace('TRN_', '');
+      const color = getTrajectoryColor(trnId, trnNumber);
+      const isSelected = selectedTrainId === trnId;
 
-      if (trnSchedules.length > 0) {
+      // Sort points chronologically
+      const sortedPoints = [...trnSchedules].sort((a, b) => a.optimized_arrival_min - b.optimized_arrival_min);
+
+      if (sortedPoints.length > 0) {
         const lineGen = d3
           .line<TrainStationSchedule>()
           .x((d) => xScale(d.optimized_arrival_min))
           .y((d) => {
-            const stn = topology.stations.find((s) => s.code === d.station_code);
+            const stn = stationsData.find((s) => s.code === d.station_code);
             return yScale(stn ? stn.km_mark : 0);
           })
           .curve(d3.curveLinear);
 
-        // Path Line
+        // Path
         g.append('path')
-          .datum(trnSchedules)
+          .datum(sortedPoints)
           .attr('fill', 'none')
           .attr('stroke', color)
           .attr('stroke-width', isSelected ? 4.5 : 3)
-          .attr('stroke-dasharray', train.number === '401' ? '6 3' : 'none')
+          .attr('stroke-dasharray', trnNumber === '401' ? '6 3' : 'none')
           .attr('cursor', 'pointer')
-          .on('click', () => onSelectTrain && onSelectTrain(train.train_id));
+          .on('click', () => onSelectTrain && onSelectTrain(trnId));
 
-        // Station Nodes & Dwell Points
-        trnSchedules.forEach((sch) => {
-          const stn = topology.stations.find((s) => s.code === sch.station_code);
+        // Station Nodes
+        sortedPoints.forEach((sch) => {
+          const stn = stationsData.find((s) => s.code === sch.station_code);
           if (!stn) return;
 
           const cx = xScale(sch.optimized_arrival_min);
@@ -155,14 +197,14 @@ export function TimeDistanceChart({
                 x: event.clientX - (bounds?.left || 0) + 12,
                 y: event.clientY - (bounds?.top || 0) - 35,
                 content: (
-                  <div className="bg-slate-900 text-white text-xs p-2.5 rounded shadow-xl border border-slate-700">
+                  <div className="bg-slate-900 text-white text-xs p-3 rounded shadow-xl border border-slate-700">
                     <div className="font-bold flex items-center space-x-1 mb-1">
                       <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }}></span>
-                      <span>{train.name} (#{train.number})</span>
+                      <span>Train #{trnNumber}</span>
                     </div>
                     <div>Station: <strong>{stn.name} ({stn.code})</strong></div>
-                    <div>Track: <strong>{sch.assigned_track}</strong></div>
-                    <div>Arr Time: <strong>T+{sch.optimized_arrival_min}m</strong></div>
+                    <div>Track: <strong className="text-amber-300">{sch.assigned_track}</strong></div>
+                    <div>Time: <strong>T+{sch.optimized_arrival_min}m</strong></div>
                     {sch.is_holding && (
                       <div className="bg-red-500/30 text-red-200 px-2 py-0.5 rounded text-[10px] font-bold mt-1">
                         HOLDING AT LOOP SIDING
@@ -174,36 +216,39 @@ export function TimeDistanceChart({
             })
             .on('mouseout', () => setTooltip(null));
         });
+
+        // Train Badge Label on first point
+        const firstPoint = sortedPoints[0];
+        const firstStn = stationsData.find((s) => s.code === firstPoint.station_code);
+        if (firstStn) {
+          const badgeX = xScale(firstPoint.optimized_arrival_min);
+          const badgeY = yScale(firstStn.km_mark);
+
+          const badgeGroup = g.append('g').attr('transform', `translate(${badgeX},${badgeY})`);
+          badgeGroup
+            .append('rect')
+            .attr('x', -4)
+            .attr('y', -10)
+            .attr('width', 48)
+            .attr('height', 20)
+            .attr('rx', 4)
+            .attr('fill', color)
+            .attr('stroke', '#FFFFFF')
+            .attr('stroke-width', 1.5);
+
+          badgeGroup
+            .append('text')
+            .attr('x', 20)
+            .attr('y', 4)
+            .attr('fill', '#FFFFFF')
+            .attr('font-size', '10px')
+            .attr('font-weight', 'bold')
+            .attr('text-anchor', 'middle')
+            .text(`#${trnNumber}`);
+        }
       }
-
-      // Train Location Point Indicator
-      const liveY = yScale(train.current_km);
-      const liveX = xScale(Math.min(72, Math.max(2, train.scheduled_start_min + (train.current_km * 0.4))));
-
-      const badgeGroup = g.append('g').attr('transform', `translate(${liveX},${liveY})`);
-
-      badgeGroup
-        .append('rect')
-        .attr('x', -4)
-        .attr('y', -10)
-        .attr('width', 52)
-        .attr('height', 20)
-        .attr('rx', 4)
-        .attr('fill', color)
-        .attr('stroke', '#FFFFFF')
-        .attr('stroke-width', 1.5);
-
-      badgeGroup
-        .append('text')
-        .attr('x', 22)
-        .attr('y', 4)
-        .attr('fill', '#FFFFFF')
-        .attr('font-size', '10px')
-        .attr('font-weight', 'bold')
-        .attr('text-anchor', 'middle')
-        .text(`#${train.number}`);
     });
-  }, [topology, trains, schedules, selectedTrainId]);
+  }, [topology, trains, schedules, selectedTrainId, stationsData, activeSchedules]);
 
   return (
     <div ref={containerRef} className="gov-card p-5 relative flex flex-col w-full">
@@ -218,7 +263,7 @@ export function TimeDistanceChart({
         </div>
 
         {/* Legend */}
-        <div className="flex items-center space-x-4 text-xs font-semibold">
+        <div className="flex flex-wrap items-center gap-4 text-xs font-semibold">
           <div className="flex items-center space-x-1.5">
             <span className="w-3 h-3 rounded-full bg-[#1D4ED8]"></span>
             <span className="text-slate-700">Vande Bharat #201 (Blue)</span>
@@ -235,9 +280,9 @@ export function TimeDistanceChart({
       </div>
 
       {/* SVG Canvas */}
-      <svg ref={svgRef} className="w-full h-[460px] bg-slate-50 border border-slate-200 rounded"></svg>
+      <svg ref={svgRef} className="w-full h-[480px] bg-slate-50 border border-slate-200 rounded"></svg>
 
-      {/* Floating Hover Tooltip */}
+      {/* Floating Tooltip */}
       {tooltip && (
         <div
           className="absolute z-50 pointer-events-none transition-all duration-75"
